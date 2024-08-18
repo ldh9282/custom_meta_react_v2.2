@@ -29,22 +29,30 @@ const SeqMetaList = () => {
 
     const navigate = useNavigate();
 
+    /** 초기조회 */
+    useEffect(() => {
+        CmmnUtils.setTitle("시퀀스 조회");
+    }, []);
+
     /** 데이터 조회 */
-    const { data, error, isLoading, isError, refetch } = useQuery({
-        queryKey: ["SeqMetaList"],
-        queryFn: () =>
-            (async (requestMap) => {
-                const response = await CmmnUtils.axios.get(
-                    CmmnUtils.url("METSE01"),
-                    CmmnUtils.requestParam(requestMap)
-                );
-                const header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    return CmmnUtils.body(response);
-                } else {
-                    throw new Error(header.errorMsg);
-                }
-            })(searchMap),
+    const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
+        queryKey: [
+            "SeqMetaList",
+            searchMap.pageNum,
+            searchMap.rowAmountPerPage,
+        ],
+        queryFn: async () => {
+            const response = await CmmnUtils.axios.get(
+                CmmnUtils.url("METSE01"),
+                CmmnUtils.requestParam(searchMap)
+            );
+            const header = CmmnUtils.header(response);
+            if (header.status === "0000") {
+                return CmmnUtils.body(response);
+            } else {
+                throw new Error(header.errorMsg);
+            }
+        },
         enabled: true, // 초기 요청
         retry: 0, // 네트워크 오류시 재요청 횟수
         refetchOnWindowFocus: false, // 알트탭, 탭변경시 재요청
@@ -68,7 +76,6 @@ const SeqMetaList = () => {
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
         });
-        handleSearch();
     };
 
     /**
@@ -80,16 +87,7 @@ const SeqMetaList = () => {
             ...searchMap,
             pageNum,
         });
-        handleSearch();
     };
-
-    if (isLoading) {
-        return (
-            <div className="spinner-container">
-                <div className="spinner"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="text-base font-bold">
@@ -232,14 +230,24 @@ const SeqMetaList = () => {
                     </tr>
                 </thead>
                 <tbody>
+                    {(isLoading || isFetching) && (
+                        <tr>
+                            <td colSpan="5" className="text-center py-5">
+                                <div className="spinner"></div>
+                            </td>
+                        </tr>
+                    )}
                     {isError && (
                         <tr>
-                            <td colSpan="6" className="text-center py-8">
+                            <td colSpan="5" className="text-center py-5">
                                 잠시 후 시도해주세요.
                             </td>
                         </tr>
                     )}
-                    {!isError &&
+                    {!isLoading &&
+                        !isFetching &&
+                        !isError &&
+                        data &&
                         data.seqMetaInfoList.map((item) => {
                             return (
                                 <tr key={item.seqMetaSno}>
@@ -263,7 +271,7 @@ const SeqMetaList = () => {
                         })}
                 </tbody>
             </table>
-            {!isError && (
+            {!isLoading && !isFetching && !isError && data && (
                 <PagingCreator
                     pagingCreator={data.pagingCreator}
                     goToPaging={goToPaging}

@@ -5,6 +5,7 @@ import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 /**
  * @function DomainList
@@ -15,14 +16,6 @@ const DomainList = () => {
     /** 전역상태 */
     const { confirmModal } = useGlobalContext();
 
-    /** defaultMap */
-    const [defaultMap, setDefaultMap] = useState({
-        pageNum: "1",
-        rowAmountPerPage: "10",
-        domainSno: "",
-        domainName: "",
-        domainType: "",
-    });
     /** searchMap */
     const [searchMap, setSearchMap] = useState({
         pageNum: "1",
@@ -32,71 +25,63 @@ const DomainList = () => {
         domainType: "",
     });
 
-    /** data */
-    const [data, setData] = useState([]);
-
-    /** pagingCreator */
-    const [pagingCreator, setPagingCreator] = useState({});
-
     const navigate = useNavigate();
 
     /** 초기조회 */
     useEffect(() => {
         CmmnUtils.setTitle("도메인 조회");
-
-        CmmnUtils.axios
-            .get(CmmnUtils.url("METDM03"), CmmnUtils.requestParam(defaultMap))
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let domainInfoList = body.domainInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(domainInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
     }, []);
+
+    /** 데이터 조회 */
+    const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
+        queryKey: ["DomainList", searchMap.pageNum, searchMap.rowAmountPerPage],
+        queryFn: async () => {
+            const response = await CmmnUtils.axios.get(
+                CmmnUtils.url("METDM03"),
+                CmmnUtils.requestParam(searchMap)
+            );
+            const header = CmmnUtils.header(response);
+            if (header.status === "0000") {
+                return CmmnUtils.body(response);
+            } else {
+                throw new Error(header.errorMsg);
+            }
+        },
+        enabled: true, // 초기 요청
+        retry: 0, // 네트워크 오류시 재요청 횟수
+        refetchOnWindowFocus: false, // 알트탭, 탭변경시 재요청
+        // refetchInterval: 10000, // 시간간격 ms 재요청
+    });
 
     /**
      * @function handleSearch
      * @desc 검색
      */
     const handleSearch = () => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METDM03"),
-                CmmnUtils.requestParam({ ...searchMap, pageNum: "1" })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let domainInfoList = body.domainInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(domainInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        refetch();
     };
+
+    /** 도메인 삭제 요청 */
+    const deleteDomain = useMutation({
+        mutationFn: async (theDomainSno) => {
+            const response = await CmmnUtils.axios.post(
+                CmmnUtils.url("METDM05"),
+                CmmnUtils.requestBody({ domainSno: theDomainSno })
+            );
+            const header = CmmnUtils.header(response);
+            if (header.status !== "0000") {
+                throw new Error(header.errorMsg);
+            }
+        },
+        onSuccess: () => {
+            AlertUtils.showSuccess("삭제되었습니다", () => {
+                refetch();
+            });
+        },
+        onError: (error) => {
+            AlertUtils.showError(error.message);
+        },
+    });
 
     /**
      * @function handleDelete
@@ -104,25 +89,8 @@ const DomainList = () => {
      * @param {string} theDomainSno
      */
     const handleDelete = (theDomainSno) => {
-        confirmModal.showConfirm("삭제하시겠습니까?", function () {
-            CmmnUtils.axios
-                .post(
-                    CmmnUtils.url("METDM05"),
-                    CmmnUtils.requestBody({ domainSno: theDomainSno })
-                )
-                .then((response) => {
-                    let header = CmmnUtils.header(response);
-                    if (header.status === "0000") {
-                        AlertUtils.showSuccess2("삭제되었습니다", function () {
-                            window.location.reload();
-                        });
-                    } else {
-                        AlertUtils.showError(header.errorMsg);
-                    }
-                })
-                .catch((error) => {
-                    LogUtils.debug(error.toString());
-                });
+        confirmModal.showConfirm("삭제하시겠습니까?", () => {
+            deleteDomain.mutate(theDomainSno);
         });
     };
 
@@ -132,34 +100,11 @@ const DomainList = () => {
      * @param {string} theRowAmountPerPage
      */
     const handleChangeRowAmount = (theRowAmountPerPage) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METDM03"),
-                CmmnUtils.requestParam({
-                    ...defaultMap,
-                    pageNum: "1",
-                    rowAmountPerPage: theRowAmountPerPage,
-                })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let domainInfoList = body.domainInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(domainInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum: "1",
+            rowAmountPerPage: theRowAmountPerPage,
+        });
     };
 
     /**
@@ -167,31 +112,10 @@ const DomainList = () => {
      * @desc 페이징 처리
      */
     const goToPaging = (pageNum) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METDM03"),
-                CmmnUtils.requestParam({ ...defaultMap, pageNum: pageNum })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let domainInfoList = body.domainInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(domainInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum,
+        });
     };
 
     return (
@@ -295,38 +219,58 @@ const DomainList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((item) => {
-                        return (
-                            <tr key={item.domainSno}>
-                                <td className="p-2 border text-center">
-                                    {item.domainSno}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.domainName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.domainType}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleDelete(item.domainSno)
-                                        }
-                                        className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                    >
-                                        삭제
-                                    </button>
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {(isLoading || isFetching) && (
+                        <tr>
+                            <td colSpan="4" className="text-center py-5">
+                                <div className="spinner"></div>
+                            </td>
+                        </tr>
+                    )}
+                    {isError && (
+                        <tr>
+                            <td colSpan="4" className="text-center py-5">
+                                잠시 후 시도해주세요.
+                            </td>
+                        </tr>
+                    )}
+                    {!isLoading &&
+                        !isFetching &&
+                        !isError &&
+                        data &&
+                        data.domainInfoList.map((item) => {
+                            return (
+                                <tr key={item.domainSno}>
+                                    <td className="p-2 border text-center">
+                                        {item.domainSno}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.domainName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.domainType}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleDelete(item.domainSno)
+                                            }
+                                            className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                        >
+                                            삭제
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                 </tbody>
             </table>
-            <PagingCreator
-                pagingCreator={pagingCreator}
-                goToPaging={goToPaging}
-            />
+            {!isLoading && !isFetching && !isError && data && (
+                <PagingCreator
+                    pagingCreator={data.pagingCreator}
+                    goToPaging={goToPaging}
+                />
+            )}
         </div>
     );
 };

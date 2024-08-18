@@ -5,6 +5,7 @@ import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * @function ColumnMetaList
@@ -15,18 +16,6 @@ const ColumnMetaList = () => {
     /** 전역상태 */
     const { confirmModal } = useGlobalContext();
 
-    /** defaultMap */
-    const [defaultMap, setDefaultMap] = useState({
-        pageNum: "1",
-        rowAmountPerPage: "10",
-        columnMetaSno: "",
-        columnName: "",
-        columnCamelName: "",
-        columnSnakeName: "",
-        schemaName: "",
-        tableName: "",
-        tableDesc: "",
-    });
     /** searchMap */
     const [searchMap, setSearchMap] = useState({
         pageNum: "1",
@@ -40,70 +29,44 @@ const ColumnMetaList = () => {
         tableDesc: "",
     });
 
-    /** data */
-    const [data, setData] = useState([]);
-
-    /** pagingCreator */
-    const [pagingCreator, setPagingCreator] = useState({});
-
     const navigate = useNavigate();
 
     /** 초기조회 */
     useEffect(() => {
         CmmnUtils.setTitle("컬럼 조회");
-
-        CmmnUtils.axios
-            .get(CmmnUtils.url("METCU01"), CmmnUtils.requestParam(defaultMap))
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let columnMetaInfoList = body.columnMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(columnMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
     }, []);
+
+    /** 데이터 조회 */
+    const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
+        queryKey: [
+            "ColumnMetaList",
+            searchMap.pageNum,
+            searchMap.rowAmountPerPage,
+        ],
+        queryFn: async () => {
+            const response = await CmmnUtils.axios.get(
+                CmmnUtils.url("METCU01"),
+                CmmnUtils.requestParam(searchMap)
+            );
+            const header = CmmnUtils.header(response);
+            if (header.status === "0000") {
+                return CmmnUtils.body(response);
+            } else {
+                throw new Error(header.errorMsg);
+            }
+        },
+        enabled: true, // 초기 요청
+        retry: 0, // 네트워크 오류시 재요청 횟수
+        refetchOnWindowFocus: false, // 알트탭, 탭변경시 재요청
+        // refetchInterval: 10000, // 시간간격 ms 재요청
+    });
 
     /**
      * @function handleSearch
      * @desc 검색
      */
     const handleSearch = () => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METCU01"),
-                CmmnUtils.requestParam({ ...searchMap, pageNum: "1" })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let columnMetaInfoList = body.columnMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(columnMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        refetch();
     };
 
     /**
@@ -112,34 +75,11 @@ const ColumnMetaList = () => {
      * @param {string} theRowAmountPerPage
      */
     const handleChangeRowAmount = (theRowAmountPerPage) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METCU01"),
-                CmmnUtils.requestParam({
-                    ...defaultMap,
-                    pageNum: "1",
-                    rowAmountPerPage: theRowAmountPerPage,
-                })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let columnMetaInfoList = body.columnMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(columnMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum: "1",
+            rowAmountPerPage: theRowAmountPerPage,
+        });
     };
 
     /**
@@ -147,30 +87,10 @@ const ColumnMetaList = () => {
      * @desc 페이징 처리
      */
     const goToPaging = (pageNum) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METCU01"),
-                CmmnUtils.requestParam({ ...defaultMap, pageNum: pageNum })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let columnMetaInfoList = body.columnMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(columnMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum,
+        });
     };
 
     const handleDetail = (tableMetaSno, columnMetaSno) => {
@@ -362,53 +282,73 @@ const ColumnMetaList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((item) => {
-                        return (
-                            <tr key={item.columnMetaSno}>
-                                <td className="p-2 border text-center">
-                                    {item.columnMetaSno}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.columnName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.columnCamelName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.columnSnakeName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.schemaName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableDesc}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleDetail(
-                                                item.tableMetaSno,
-                                                item.columnMetaSno
-                                            )
-                                        }
-                                        className="px-4 py-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                    >
-                                        상세
-                                    </button>
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {(isLoading || isFetching) && (
+                        <tr>
+                            <td colSpan="8" className="text-center py-5">
+                                <div className="spinner"></div>
+                            </td>
+                        </tr>
+                    )}
+                    {isError && (
+                        <tr>
+                            <td colSpan="8" className="text-center py-5">
+                                잠시 후 시도해주세요.
+                            </td>
+                        </tr>
+                    )}
+                    {!isLoading &&
+                        !isFetching &&
+                        !isError &&
+                        data &&
+                        data.columnMetaInfoList.map((item) => {
+                            return (
+                                <tr key={item.columnMetaSno}>
+                                    <td className="p-2 border text-center">
+                                        {item.columnMetaSno}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.columnName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.columnCamelName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.columnSnakeName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.schemaName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.tableName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.tableDesc}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleDetail(
+                                                    item.tableMetaSno,
+                                                    item.columnMetaSno
+                                                )
+                                            }
+                                            className="px-4 py-2 bg-gradient-to-r from-green-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                        >
+                                            상세
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                 </tbody>
             </table>
-            <PagingCreator
-                pagingCreator={pagingCreator}
-                goToPaging={goToPaging}
-            />
+            {!isLoading && !isFetching && !isError && data && (
+                <PagingCreator
+                    pagingCreator={data.pagingCreator}
+                    goToPaging={goToPaging}
+                />
+            )}
         </div>
     );
 };

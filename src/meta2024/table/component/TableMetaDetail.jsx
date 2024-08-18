@@ -45,12 +45,12 @@ const TableMetaDetail = () => {
 
         const theTableMetaSno = queryParams.get("tableMetaSno");
 
-        let requsetMap = {
+        let requestMap = {
             tableMetaSno: theTableMetaSno,
         };
 
         CmmnUtils.axios
-            .get(CmmnUtils.url("METTB03"), CmmnUtils.requestParam(requsetMap))
+            .get(CmmnUtils.url("METTB03"), CmmnUtils.requestParam(requestMap))
             .then((response) => {
                 let header = CmmnUtils.header(response);
                 if (header.status === "0000") {

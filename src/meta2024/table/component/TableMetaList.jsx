@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { CmmnUtils } from "../../../cmmn/utils/CmmnUtils";
 import { useNavigate } from "react-router-dom";
 import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
  * @function TableMetaList
@@ -15,15 +16,6 @@ const TableMetaList = () => {
     /** 전역상태 */
     const { confirmModal } = useGlobalContext();
 
-    /** defaultMap */
-    const [defaultMap, setDefaultMap] = useState({
-        pageNum: "1",
-        rowAmountPerPage: "10",
-        tableMetaSno: "",
-        schemaName: "",
-        tableName: "",
-        tableDesc: "",
-    });
     /** searchMap */
     const [searchMap, setSearchMap] = useState({
         pageNum: "1",
@@ -34,169 +26,83 @@ const TableMetaList = () => {
         tableDesc: "",
     });
 
-    /** data */
-    const [data, setData] = useState([]);
-
-    /** pagingCreator */
-    const [pagingCreator, setPagingCreator] = useState({});
-
     const navigate = useNavigate();
 
     /** 초기조회 */
-    useEffect(() => {
-        CmmnUtils.setTitle("테이블 조회");
-
-        CmmnUtils.axios
-            .get(CmmnUtils.url("METTB01"), CmmnUtils.requestParam(defaultMap))
-            .then((response) => {
-                let header = CmmnUtils.header(response);
+    const { data, error, isLoading, isError, refetch } = useQuery({
+        queryKey: ["TableMetaList"],
+        queryFn: () =>
+            (async (requestMap) => {
+                const response = await CmmnUtils.axios.get(
+                    CmmnUtils.url("METTB01"),
+                    CmmnUtils.requestParam(requestMap)
+                );
+                const header = CmmnUtils.header(response);
                 if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let tableMetaInfoList = body.tableMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(tableMetaInfoList);
-                    setPagingCreator(thePagingCreator);
+                    return CmmnUtils.body(response);
                 } else {
-                    AlertUtils.showError(header.errorMsg);
+                    throw new Error(header.errorMsg);
                 }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
+            })(searchMap),
+        enabled: true,
+    });
+
+    /** 테이블 삭제 요청 */
+    const deleteTableMeta = useMutation({
+        mutationFn: async (tableMetaSno) => {
+            const response = await CmmnUtils.axios.post(
+                CmmnUtils.url("METTB05"),
+                CmmnUtils.requestBody({ tableMetaSno })
+            );
+            const header = CmmnUtils.header(response);
+            if (header.status !== "0000") {
+                throw new Error(header.errorMsg);
+            }
+        },
+        onSuccess: () => {
+            AlertUtils.showSuccess("삭제되었습니다", () => {
+                refetch();
             });
-    }, []);
+        },
+        onError: (error) => {
+            AlertUtils.showError(error.message);
+        },
+    });
 
-    /**
-     * @function handleSearch
-     * @desc 검색
-     */
-    const handleSearch = () => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METTB01"),
-                CmmnUtils.requestParam({ ...searchMap, pageNum: "1" })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let tableMetaInfoList = body.tableMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(tableMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
-    };
-
-    /**
-     * @function handleDelete
-     * @desc 테이블삭제요청
-     * @param {string} theTableMetaSno
-     */
-    const handleDelete = (theTableMetaSno) => {
-        confirmModal.showConfirm("삭제하시겠습니까?", function () {
-            CmmnUtils.axios
-                .post(
-                    CmmnUtils.url("METTB05"),
-                    CmmnUtils.requestBody({ tableMetaSno: theTableMetaSno })
-                )
-                .then((response) => {
-                    let header = CmmnUtils.header(response);
-                    if (header.status === "0000") {
-                        AlertUtils.showSuccess2("삭제되었습니다", function () {
-                            window.location.reload();
-                        });
-                    } else {
-                        AlertUtils.showError(header.errorMsg);
-                    }
-                })
-                .catch((error) => {
-                    LogUtils.debug(error.toString());
-                });
+    const handleDelete = (tableMetaSno) => {
+        confirmModal.showConfirm("삭제하시겠습니까?", () => {
+            deleteTableMeta.mutate(tableMetaSno);
         });
     };
 
-    /**
-     * @function handleChangeRowAmount
-     * @desc 페이지당 행수변경
-     * @param {string} theRowAmountPerPage
-     */
+    /** 검색 핸들러 */
+    const handleSearch = () => {
+        refetch();
+    };
+
     const handleChangeRowAmount = (theRowAmountPerPage) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METTB01"),
-                CmmnUtils.requestParam({
-                    ...defaultMap,
-                    pageNum: "1",
-                    rowAmountPerPage: theRowAmountPerPage,
-                })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let tableMetaInfoList = body.tableMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(tableMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum: "1",
+            rowAmountPerPage: theRowAmountPerPage,
+        });
+        handleSearch();
     };
 
-    /**
-     * @function goToPaging
-     * @desc 페이징 처리
-     */
     const goToPaging = (pageNum) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METTB01"),
-                CmmnUtils.requestParam({ ...defaultMap, pageNum: pageNum })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let tableMetaInfoList = body.tableMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(tableMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum,
+        });
+        handleSearch();
     };
+
     const handleDetail = (tableMetaSno) => {
         navigate(`/METTB03?tableMetaSno=${tableMetaSno}`);
     };
+
+    if (isLoading) return <div>Loading...</div>;
+    if (isError) return <div>Error: {error.message}</div>;
 
     return (
         <div className="text-base font-bold">
@@ -323,50 +229,48 @@ const TableMetaList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((item) => {
-                        return (
-                            <tr key={item.tableMetaSno}>
-                                <td className="p-2 border text-center">
-                                    {item.tableMetaSno}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.schemaName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableDesc}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleDetail(item.tableMetaSno)
-                                        }
-                                        className="px-4 py-2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                    >
-                                        상세
-                                    </button>
-                                </td>
-                                <td className="p-2 border text-center">
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleDelete(item.tableMetaSno)
-                                        }
-                                        className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                    >
-                                        삭제
-                                    </button>
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {data?.tableMetaInfoList?.map((item) => (
+                        <tr key={item.tableMetaSno}>
+                            <td className="p-2 border text-center">
+                                {item.tableMetaSno}
+                            </td>
+                            <td className="p-2 border text-center">
+                                {item.schemaName}
+                            </td>
+                            <td className="p-2 border text-center">
+                                {item.tableName}
+                            </td>
+                            <td className="p-2 border text-center">
+                                {item.tableDesc}
+                            </td>
+                            <td className="p-2 border text-center">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDetail(item.tableMetaSno)
+                                    }
+                                    className="px-4 py-2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                >
+                                    상세
+                                </button>
+                            </td>
+                            <td className="p-2 border text-center">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        handleDelete(item.tableMetaSno)
+                                    }
+                                    className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                >
+                                    삭제
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
             <PagingCreator
-                pagingCreator={pagingCreator}
+                pagingCreator={data?.pagingCreator}
                 goToPaging={goToPaging}
             />
         </div>

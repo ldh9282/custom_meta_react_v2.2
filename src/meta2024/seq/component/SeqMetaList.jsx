@@ -5,6 +5,7 @@ import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * @function SeqMetaList
@@ -15,16 +16,6 @@ const SeqMetaList = () => {
     /** 전역상태 */
     const { confirmModal } = useGlobalContext();
 
-    /** defaultMap */
-    const [defaultMap, setDefaultMap] = useState({
-        pageNum: "1",
-        rowAmountPerPage: "10",
-        seqMetaSno: "",
-        seqName: "",
-        schemaName: "",
-        tableName: "",
-        tableDesc: "",
-    });
     /** searchMap */
     const [searchMap, setSearchMap] = useState({
         pageNum: "1",
@@ -36,71 +27,35 @@ const SeqMetaList = () => {
         tableDesc: "",
     });
 
-    /** data */
-    const [data, setData] = useState([]);
-
-    /** pagingCreator */
-    const [pagingCreator, setPagingCreator] = useState({});
-
     const navigate = useNavigate();
 
-    /** 초기조회 */
-    useEffect(() => {
-        CmmnUtils.setTitle("시퀀스 조회");
-
-        CmmnUtils.axios
-            .get(CmmnUtils.url("METSE01"), CmmnUtils.requestParam(defaultMap))
-            .then((response) => {
-                let header = CmmnUtils.header(response);
+    /** 데이터 조회 */
+    const { data, error, isLoading, isError, refetch } = useQuery({
+        queryKey: ["SeqMetaList"],
+        queryFn: () =>
+            (async (requestMap) => {
+                const response = await CmmnUtils.axios.get(
+                    CmmnUtils.url("METSE01"),
+                    CmmnUtils.requestParam(requestMap)
+                );
+                const header = CmmnUtils.header(response);
                 if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let seqMetaInfoList = body.seqMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(seqMetaInfoList);
-                    setPagingCreator(thePagingCreator);
+                    return CmmnUtils.body(response);
                 } else {
-                    AlertUtils.showError(header.errorMsg);
+                    throw new Error(header.errorMsg);
                 }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
-    }, []);
+            })(searchMap),
+        enabled: true, // 초기 요청
+        retry: 0, // 네트워크 오류시 재요청 횟수
+        refetchOnWindowFocus: false, // 알트탭, 탭변경시 재요청
+        // refetchInterval: 10000, // 시간간격 ms 재요청
+    });
 
     /**
      * @function handleSearch
      * @desc 검색
      */
-    const handleSearch = () => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METSE01"),
-                CmmnUtils.requestParam({ ...searchMap, pageNum: "1" })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let seqMetaInfoList = body.seqMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(seqMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
-    };
+    const handleSearch = () => refetch();
 
     /**
      * @function handleChangeRowAmount
@@ -108,34 +63,12 @@ const SeqMetaList = () => {
      * @param {string} theRowAmountPerPage
      */
     const handleChangeRowAmount = (theRowAmountPerPage) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METSE01"),
-                CmmnUtils.requestParam({
-                    ...defaultMap,
-                    pageNum: "1",
-                    rowAmountPerPage: theRowAmountPerPage,
-                })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let seqMetaInfoList = body.seqMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(seqMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum: "1",
+            rowAmountPerPage: theRowAmountPerPage,
+        });
+        handleSearch();
     };
 
     /**
@@ -143,32 +76,20 @@ const SeqMetaList = () => {
      * @desc 페이징 처리
      */
     const goToPaging = (pageNum) => {
-        CmmnUtils.axios
-            .get(
-                CmmnUtils.url("METSE01"),
-                CmmnUtils.requestParam({ ...defaultMap, pageNum: pageNum })
-            )
-            .then((response) => {
-                let header = CmmnUtils.header(response);
-
-                if (header.status === "0000") {
-                    let body = CmmnUtils.body(response);
-                    let requestMap = body.requestMap;
-                    let seqMetaInfoList = body.seqMetaInfoList;
-                    let thePagingCreator = body.pagingCreator;
-
-                    setDefaultMap(requestMap);
-                    setSearchMap(requestMap);
-                    setData(seqMetaInfoList);
-                    setPagingCreator(thePagingCreator);
-                } else {
-                    AlertUtils.showError(header.errorMsg);
-                }
-            })
-            .catch((error) => {
-                LogUtils.debug(error.toString());
-            });
+        setSearchMap({
+            ...searchMap,
+            pageNum,
+        });
+        handleSearch();
     };
+
+    if (isLoading) {
+        return (
+            <div className="spinner-container">
+                <div className="spinner"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="text-base font-bold">
@@ -311,33 +232,43 @@ const SeqMetaList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data.map((item) => {
-                        return (
-                            <tr key={item.seqMetaSno}>
-                                <td className="p-2 border text-center">
-                                    {item.seqMetaSno}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.seqName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.schemaName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableName}
-                                </td>
-                                <td className="p-2 border text-center">
-                                    {item.tableDesc}
-                                </td>
-                            </tr>
-                        );
-                    })}
+                    {isError && (
+                        <tr>
+                            <td colSpan="6" className="text-center py-8">
+                                잠시 후 시도해주세요.
+                            </td>
+                        </tr>
+                    )}
+                    {!isError &&
+                        data.seqMetaInfoList.map((item) => {
+                            return (
+                                <tr key={item.seqMetaSno}>
+                                    <td className="p-2 border text-center">
+                                        {item.seqMetaSno}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.seqName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.schemaName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.tableName}
+                                    </td>
+                                    <td className="p-2 border text-center">
+                                        {item.tableDesc}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                 </tbody>
             </table>
-            <PagingCreator
-                pagingCreator={pagingCreator}
-                goToPaging={goToPaging}
-            />
+            {!isError && (
+                <PagingCreator
+                    pagingCreator={data.pagingCreator}
+                    goToPaging={goToPaging}
+                />
+            )}
         </div>
     );
 };

@@ -5,7 +5,7 @@ import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 
 /**
  * @function TableMetaList
@@ -28,7 +28,7 @@ const TableMetaList = () => {
 
     const navigate = useNavigate();
 
-    /** 초기조회 */
+    /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch } = useQuery({
         queryKey: ["TableMetaList"],
         queryFn: () =>
@@ -44,7 +44,10 @@ const TableMetaList = () => {
                     throw new Error(header.errorMsg);
                 }
             })(searchMap),
-        enabled: true,
+        enabled: true, // 초기 요청
+        retry: 0, // 네트워크 오류시 재요청 횟수
+        refetchOnWindowFocus: false, // 알트탭, 탭변경시 재요청
+        // refetchInterval: 10000, // 시간간격 ms 재요청
     });
 
     /** 테이블 삭제 요청 */
@@ -101,8 +104,13 @@ const TableMetaList = () => {
         navigate(`/METTB03?tableMetaSno=${tableMetaSno}`);
     };
 
-    if (isLoading) return <div>Loading...</div>;
-    if (isError) return <div>Error: {error.message}</div>;
+    if (isLoading) {
+        return (
+            <div className="spinner-container">
+                <div className="spinner"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="text-base font-bold">
@@ -229,50 +237,60 @@ const TableMetaList = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {data?.tableMetaInfoList?.map((item) => (
-                        <tr key={item.tableMetaSno}>
-                            <td className="p-2 border text-center">
-                                {item.tableMetaSno}
-                            </td>
-                            <td className="p-2 border text-center">
-                                {item.schemaName}
-                            </td>
-                            <td className="p-2 border text-center">
-                                {item.tableName}
-                            </td>
-                            <td className="p-2 border text-center">
-                                {item.tableDesc}
-                            </td>
-                            <td className="p-2 border text-center">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        handleDetail(item.tableMetaSno)
-                                    }
-                                    className="px-4 py-2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                >
-                                    상세
-                                </button>
-                            </td>
-                            <td className="p-2 border text-center">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        handleDelete(item.tableMetaSno)
-                                    }
-                                    className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
-                                >
-                                    삭제
-                                </button>
+                    {isError && (
+                        <tr>
+                            <td colSpan="6" className="text-center py-8">
+                                잠시 후 시도해주세요.
                             </td>
                         </tr>
-                    ))}
+                    )}
+                    {!isError &&
+                        data.tableMetaInfoList.map((item) => (
+                            <tr key={item.tableMetaSno}>
+                                <td className="p-2 border text-center">
+                                    {item.tableMetaSno}
+                                </td>
+                                <td className="p-2 border text-center">
+                                    {item.schemaName}
+                                </td>
+                                <td className="p-2 border text-center">
+                                    {item.tableName}
+                                </td>
+                                <td className="p-2 border text-center">
+                                    {item.tableDesc}
+                                </td>
+                                <td className="p-2 border text-center">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleDetail(item.tableMetaSno)
+                                        }
+                                        className="px-4 py-2 bg-gradient-to-r from-emerald-400 to-emerald-500 text-white rounded-md shadow-md hover:from-emerald-500 hover:to-emerald-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                    >
+                                        상세
+                                    </button>
+                                </td>
+                                <td className="p-2 border text-center">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleDelete(item.tableMetaSno)
+                                        }
+                                        className="px-4 py-2 bg-gradient-to-r from-red-400 to-red-500 text-white rounded-md shadow-md hover:from-red-500 hover:to-red-600 transition duration-300 transform hover:scale-105 focus:outline-none"
+                                    >
+                                        삭제
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
                 </tbody>
             </table>
-            <PagingCreator
-                pagingCreator={data?.pagingCreator}
-                goToPaging={goToPaging}
-            />
+            {!isError && (
+                <PagingCreator
+                    pagingCreator={data.pagingCreator}
+                    goToPaging={goToPaging}
+                />
+            )}
         </div>
     );
 };

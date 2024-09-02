@@ -59,10 +59,14 @@ export class CmmnUtils {
 // 요청 인터셉터 추가
 CmmnUtils.axios.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("jwtToken");
+        const jwtToken = localStorage.getItem("jwtToken");
+        const jwtRefreshToken = localStorage.getItem("jwtRefreshToken");
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (jwtToken) {
+            config.headers.Authorization = `Bearer ${jwtToken}`;
+        }
+        if (jwtRefreshToken) {
+            config.headers.RefreshToken = jwtRefreshToken;
         }
 
         return config;
@@ -75,13 +79,18 @@ CmmnUtils.axios.interceptors.request.use(
 // 응답 인터셉터 추가
 CmmnUtils.axios.interceptors.response.use(
     (response) => {
+        if (response.data.body?.jwtToken) {
+            localStorage.setItem("jwtToken", response.data.body.jwtToken);
+        }
+        if (response.data.body?.jwtRefreshToken) {
+            localStorage.setItem(
+                "jwtRefreshToken",
+                response.data.body.jwtRefreshToken
+            );
+        }
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
-            localStorage.removeItem("jwtToken");
-            window.location.href = "/METLG04";
-        }
         return Promise.reject(error);
     }
 );

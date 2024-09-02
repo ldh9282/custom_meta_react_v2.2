@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CmmnUtils } from "../../cmmn/utils/CmmnUtils";
-import { LogUtils } from "../../cmmn/utils/LogUtils";
 import { AlertUtils } from "../../cmmn/utils/AlertUtils";
 import { AuthUtils } from "../../cmmn/utils/AuthUtils";
+import { CmmnUtils } from "../../cmmn/utils/CmmnUtils";
+import { LogUtils } from "../../cmmn/utils/LogUtils";
 
 const Login = () => {
     const [loginMap, setLoginMap] = useState({
@@ -28,6 +28,16 @@ const Login = () => {
      * @desc 로그인처리
      */
     const handleLogin = () => {
+        // 필수값 입력체크
+        if (
+            !AlertUtils.checkRequiredFields([
+                { label: "아이디", value: loginMap.username },
+                { label: "비밀번호", value: loginMap.password },
+            ])
+        ) {
+            return;
+        }
+
         let requestMap = {
             username: loginMap.username,
             password: loginMap.password,
@@ -46,6 +56,10 @@ const Login = () => {
                     let body = CmmnUtils.body(response);
                     AuthUtils.setAuthItems(header);
                     localStorage.setItem("jwtToken", body.jwtToken);
+                    localStorage.setItem(
+                        "jwtRefreshToken",
+                        body.jwtRefreshToken
+                    );
 
                     AlertUtils.showSuccess("인증되었습니다", () => {
                         navigate("/");

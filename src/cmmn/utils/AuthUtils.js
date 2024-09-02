@@ -10,6 +10,7 @@ export class AuthUtils {
         localStorage.removeItem("username");
         localStorage.removeItem("authList");
         localStorage.removeItem("jwtToken");
+        localStorage.removeItem("jwtRefreshToken");
     }
 
     static setAuthItems(header) {
@@ -27,6 +28,7 @@ export class AuthUtils {
     static isAuthenticated() {
         return (
             localStorage.getItem("jwtToken") &&
+            localStorage.getItem("jwtRefreshToken") &&
             localStorage.getItem("authenticatedYn") === "1"
         );
     }

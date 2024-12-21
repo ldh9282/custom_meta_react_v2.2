@@ -22,6 +22,9 @@ const Login = () => {
     /** 초기조회 */
     useEffect(() => {
         CmmnUtils.setTitle("로그인");
+        if (AuthUtils.isAuthenticated()) {
+            navigate("/");
+        }
     }, []);
     /**
      * @function handleLogin
@@ -194,8 +197,8 @@ const Login = () => {
                     </div>
 
                     <div className="text-center text-sm text-gray-600 mt-4">
-                        계정이 없으신가요?{" "}
-                        <a href="/" className="text-blue-500 hover:underline">
+                        <span className="mr-1">계정이 없으신가요?</span>
+                        <a href="/" className="text-blue-500">
                             계정만들기
                         </a>
                     </div>

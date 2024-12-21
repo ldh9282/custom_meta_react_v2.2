@@ -31,7 +31,11 @@ function App() {
             <Router>
                 <Routes>
                     <Route path="/METLG04" element={<Login />} />
-                    <Route path="/" element={<Navigate to="/METTB02" />} />
+                    {/* <Route path="/" element={<Navigate to="/METTB02" />} /> */}
+                    <Route
+                        path="/"
+                        element={<PrivateRoute element={TableMetaList} />}
+                    />
                     <Route
                         path="/METDM01"
                         element={<PrivateRoute element={DomainReg} />}

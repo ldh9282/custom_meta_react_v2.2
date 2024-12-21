@@ -1,7 +1,8 @@
+import { env } from "../../envConfig";
 import { CustomMap } from "../model/CustomMap";
 
 export class LogUtils {
-    static isDebugEnabled = true;
+    static isDebugEnabled = env.LOGGING_LEVEL_DEBUG === "true";
 
     static debug(...args) {
         if (LogUtils.isDebugEnabled) {

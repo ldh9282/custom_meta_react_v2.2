@@ -1,28 +1,29 @@
 import React from "react";
 import {
-    BrowserRouter as Router,
-    Route,
-    Routes,
     Navigate,
+    Route,
+    BrowserRouter as Router,
+    Routes,
 } from "react-router-dom";
-import Layout from "./cmmn/component/Layout";
-import TableMetaList from "./meta2024/table/component/tableMetaList";
-import TableMetaReg from "./meta2024/table/component/TableMetaReg";
+import TableMetaReg from "./meta2024/table/page/TableMetaReg";
 
-import ConfirmModal from "./cmmn/component/ConfirmModal";
 import { Slide, ToastContainer } from "react-toastify";
-import ColumnMetaList from "./meta2024/column/component/ColumnMetaList";
+import ConfirmModal from "./cmmn/component/ConfirmModal";
 import Dimm from "./cmmn/component/Dimm";
-import SeqMetaList from "./meta2024/seq/component/seqMetaList";
-import SchemaMetaReg from "./meta2024/schema/component/SchemaMetaReg";
-import ColumnMetaDetail from "./meta2024/column/component/ColumnMetaDetail";
-import DomainReg from "./meta2024/domain/component/domainReg";
-import DomainList from "./meta2024/domain/component/DomainList";
-import TermReg from "./meta2024/term/component/TermReg";
-import TermList from "./meta2024/term/component/TermList";
 import PrivateRoute from "./cmmn/component/PrivateRoute";
 import Login from "./login/component/Login";
-import TableMetaDetail from "./meta2024/table/component/TableMetaDetail";
+import ColumnMetaDetail from "./meta2024/column/page/ColumnMetaDetail";
+import ColumnMetaList from "./meta2024/column/page/ColumnMetaList";
+import DomainList from "./meta2024/domain/page/DomainList";
+import DomainReg from "./meta2024/domain/page/DomainReg";
+import SchemaMetaReg from "./meta2024/schema/page/SchemaMetaReg";
+import SeqMetaList from "./meta2024/seq/page/SeqMetaList";
+import TableMetaDetail from "./meta2024/table/page/TableMetaDetail";
+import TableMetaList from "./meta2024/table/page/TableMetaList";
+import TermList from "./meta2024/term/page/TermList";
+import TermReg from "./meta2024/term/page/TermReg";
+import S001_001 from "./sample/s001/page/s001_001";
+import S001_002 from "./sample/s001/page/S001_002";
 
 function App() {
     return (
@@ -75,6 +76,8 @@ function App() {
                         path="/METSE01"
                         element={<PrivateRoute element={SeqMetaList} />}
                     />
+                    <Route path="/S001_001" element={<S001_001 />} />
+                    <Route path="/S001_002" element={<S001_002 />} />
                 </Routes>
             </Router>
             {/* https://fkhadra.github.io/react-toastify/introduction/ */}

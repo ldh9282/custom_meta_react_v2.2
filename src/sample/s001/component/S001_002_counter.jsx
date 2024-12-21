@@ -1,0 +1,35 @@
+import { useCounterContext } from "../context/counterContext";
+import counterReducer from "../reducer/CounterReducer";
+
+const S001_002_counter = () => {
+    const { counter } = useCounterContext();
+
+    return (
+        <div>
+            <p>{counter.state.count}</p>
+            <p>
+                <button
+                    onClick={() =>
+                        counter.dispatch({
+                            type: counterReducer.actionMap.A001,
+                        })
+                    }
+                >
+                    PLUS
+                </button>
+            </p>
+            <p>
+                <button
+                    onClick={() =>
+                        counter.dispatch({
+                            type: counterReducer.actionMap.A002,
+                        })
+                    }
+                >
+                    MINUS
+                </button>
+            </p>
+        </div>
+    );
+};
+export default S001_002_counter;

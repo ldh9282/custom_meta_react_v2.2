@@ -46,9 +46,7 @@ const PrivateRoute = ({ element: Element, ...rest }) => {
         );
     } else {
         AuthUtils.removeAuthItems();
-        AlertUtils.showError("로그인 시간이 만료되었습니다", () =>
-            navigate("/METLG04")
-        );
+        window.location.href = "/METLG04";
     }
 };
 

@@ -1,10 +1,11 @@
 ### CUSTOM #############
+.env.development
+.env.production
 bin
 table-scripts
 util-bash
 
 ########################
-
 
 # Logs
 logs

@@ -1,7 +1,8 @@
 import axios from "axios";
 import { LogUtils } from "./LogUtils";
+import { env } from "../../envConfig";
 
-const path = "http://localhost:8080/v2/";
+const path = env.CUSTOM_MET.API_URL;
 
 export class CmmnUtils {
     static axios = axios.create({

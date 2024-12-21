@@ -66,7 +66,10 @@ const ColumnMetaList = () => {
      * @desc 검색
      */
     const handleSearch = () => {
-        refetch();
+        setSearchMap({
+            ...searchMap,
+            pageNum: "1",
+        });
     };
 
     /**

@@ -88,7 +88,10 @@ const TableMetaList = () => {
 
     /** 검색 핸들러 */
     const handleSearch = () => {
-        refetch();
+        setSearchMap({
+            ...searchMap,
+            pageNum: 1,
+        });
     };
 
     const handleChangeRowAmount = (theRowAmountPerPage) => {

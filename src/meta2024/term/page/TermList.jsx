@@ -59,7 +59,10 @@ const TermList = () => {
      * @desc 검색
      */
     const handleSearch = () => {
-        refetch();
+        setSearchMap({
+            ...searchMap,
+            pageNum: 1,
+        });
     };
 
     /** 도메인 삭제 요청 */

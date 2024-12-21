@@ -63,7 +63,12 @@ const SeqMetaList = () => {
      * @function handleSearch
      * @desc 검색
      */
-    const handleSearch = () => refetch();
+    const handleSearch = () => {
+        setSearchMap({
+            ...searchMap,
+            pageNum: 1,
+        });
+    };
 
     /**
      * @function handleChangeRowAmount

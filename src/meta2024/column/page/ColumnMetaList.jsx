@@ -5,7 +5,8 @@ import { AlertUtils } from "../../../cmmn/utils/AlertUtils";
 import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { nanoid } from "nanoid";
 
 /**
  * @function ColumnMetaList
@@ -27,6 +28,7 @@ const ColumnMetaList = () => {
         schemaName: "",
         tableName: "",
         tableDesc: "",
+        refetchTrigger: "",
     });
 
     const navigate = useNavigate();
@@ -38,11 +40,7 @@ const ColumnMetaList = () => {
 
     /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
-        queryKey: [
-            "ColumnMetaList",
-            searchMap.pageNum,
-            searchMap.rowAmountPerPage,
-        ],
+        queryKey: ["ColumnMetaList", searchMap.refetchTrigger],
         queryFn: async () => {
             const response = await CmmnUtils.axios.get(
                 CmmnUtils.url("METCU01"),
@@ -69,6 +67,7 @@ const ColumnMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum: "1",
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -82,6 +81,7 @@ const ColumnMetaList = () => {
             ...searchMap,
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -93,6 +93,7 @@ const ColumnMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum,
+            refetchTrigger: nanoid(),
         });
     };
 

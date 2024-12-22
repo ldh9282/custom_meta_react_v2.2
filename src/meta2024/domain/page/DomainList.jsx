@@ -6,6 +6,7 @@ import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { nanoid } from "nanoid";
 
 /**
  * @function DomainList
@@ -23,6 +24,7 @@ const DomainList = () => {
         domainSno: "",
         domainName: "",
         domainType: "",
+        refetchTrigger: "",
     });
 
     const navigate = useNavigate();
@@ -34,7 +36,7 @@ const DomainList = () => {
 
     /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
-        queryKey: ["DomainList", searchMap.pageNum, searchMap.rowAmountPerPage],
+        queryKey: ["DomainList", searchMap.refetchTrigger],
         queryFn: async () => {
             const response = await CmmnUtils.axios.get(
                 CmmnUtils.url("METDM03"),
@@ -61,6 +63,7 @@ const DomainList = () => {
         setSearchMap({
             ...searchMap,
             pageNum: 1,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -107,6 +110,7 @@ const DomainList = () => {
             ...searchMap,
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -118,6 +122,7 @@ const DomainList = () => {
         setSearchMap({
             ...searchMap,
             pageNum,
+            refetchTrigger: nanoid(),
         });
     };
 

@@ -6,6 +6,7 @@ import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
 import { useQuery } from "@tanstack/react-query";
+import { nanoid } from "nanoid";
 
 /**
  * @function SeqMetaList
@@ -25,6 +26,7 @@ const SeqMetaList = () => {
         schemaName: "",
         tableName: "",
         tableDesc: "",
+        refetchTrigger: "",
     });
 
     const navigate = useNavigate();
@@ -36,11 +38,7 @@ const SeqMetaList = () => {
 
     /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
-        queryKey: [
-            "SeqMetaList",
-            searchMap.pageNum,
-            searchMap.rowAmountPerPage,
-        ],
+        queryKey: ["SeqMetaList", searchMap.refetchTrigger],
         queryFn: async () => {
             const response = await CmmnUtils.axios.get(
                 CmmnUtils.url("METSE01"),
@@ -67,6 +65,7 @@ const SeqMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum: 1,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -80,6 +79,7 @@ const SeqMetaList = () => {
             ...searchMap,
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -91,6 +91,7 @@ const SeqMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum,
+            refetchTrigger: nanoid(),
         });
     };
 

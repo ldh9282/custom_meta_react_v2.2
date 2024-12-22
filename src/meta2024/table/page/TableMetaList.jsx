@@ -6,6 +6,7 @@ import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { nanoid } from "nanoid";
 
 /**
  * @function TableMetaList
@@ -24,6 +25,7 @@ const TableMetaList = () => {
         schemaName: "",
         tableName: "",
         tableDesc: "",
+        refetchTrigger: "",
     });
 
     const navigate = useNavigate();
@@ -35,11 +37,7 @@ const TableMetaList = () => {
 
     /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
-        queryKey: [
-            "TableMetaList",
-            searchMap.pageNum,
-            searchMap.rowAmountPerPage,
-        ],
+        queryKey: ["TableMetaList", searchMap.refetchTrigger],
         queryFn: async () => {
             const response = await CmmnUtils.axios.get(
                 CmmnUtils.url("METTB01"),
@@ -91,6 +89,7 @@ const TableMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum: 1,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -99,6 +98,7 @@ const TableMetaList = () => {
             ...searchMap,
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -106,6 +106,7 @@ const TableMetaList = () => {
         setSearchMap({
             ...searchMap,
             pageNum,
+            refetchTrigger: nanoid(),
         });
     };
 

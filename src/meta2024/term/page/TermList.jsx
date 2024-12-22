@@ -6,6 +6,7 @@ import { LogUtils } from "../../../cmmn/utils/LogUtils";
 import { useGlobalContext } from "../../../context";
 import PagingCreator from "../../../cmmn/component/PagingCreator";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { nanoid } from "nanoid";
 
 /**
  * @function TermList
@@ -24,6 +25,7 @@ const TermList = () => {
         termName: "",
         termCamelName: "",
         termSnakeName: "",
+        refetchTrigger: "",
     });
 
     const navigate = useNavigate();
@@ -35,7 +37,7 @@ const TermList = () => {
 
     /** 데이터 조회 */
     const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
-        queryKey: ["TermList", searchMap.pageNum, searchMap.rowAmountPerPage],
+        queryKey: ["TermList", searchMap.refetchTrigger],
         queryFn: async () => {
             const response = await CmmnUtils.axios.get(
                 CmmnUtils.url("METTM03"),
@@ -62,6 +64,7 @@ const TermList = () => {
         setSearchMap({
             ...searchMap,
             pageNum: 1,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -112,6 +115,7 @@ const TermList = () => {
             ...searchMap,
             pageNum: "1",
             rowAmountPerPage: theRowAmountPerPage,
+            refetchTrigger: nanoid(),
         });
     };
 
@@ -123,6 +127,7 @@ const TermList = () => {
         setSearchMap({
             ...searchMap,
             pageNum,
+            refetchTrigger: nanoid(),
         });
     };
 

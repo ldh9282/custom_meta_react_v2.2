@@ -1,4 +1,4 @@
-const S001_001 = () => {
-    return <div>S001_001</div>;
+const S002_001 = () => {
+    return <div>S002_001</div>;
 };
-export default S001_001;
+export default S002_001;
